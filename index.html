@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Conflict Mode Assessment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen p-4">
+
+    <main class="bg-white rounded-xl shadow-lg w-full max-w-4xl p-6 sm:p-8 md:p-10">
+        
+        <!-- Assessment Section -->
+        <div id="assessment-section">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">Conflict Mode Assessment</h1>
+                <p class="mt-2 text-gray-600">Based on the Thomas-Kilmann Model</p>
+            </div>
+            
+            <div id="instructions" class="mb-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+                <h2 class="font-bold text-lg text-blue-800">Instructions</h2>
+                <p class="mt-2 text-blue-700">Consider situations where your wishes differ from another person's. For each of the 30 pairs of statements below, choose the one that is most typical of your behavior. Select the response you would be more likely to use.</p>
+            </div>
+
+            <form id="assessment-form">
+                <div id="questions-container" class="space-y-8">
+                    <!-- Questions will be dynamically inserted here -->
+                </div>
+                <div class="mt-10 text-center">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                        Calculate My Score
+                    </button>
+                    <p id="error-message" class="text-red-500 mt-4 h-6"></p>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results Section (Initially Hidden) -->
+        <div id="results-section" class="hidden">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">Your Results</h1>
+                <p class="mt-2 text-gray-600">Your scores for the five conflict-handling modes are below.</p>
+            </div>
+
+            <div id="results-container" class="space-y-6">
+                <!-- Results bars and descriptions will be dynamically inserted here -->
+            </div>
+
+            <div class="mt-10 text-center">
+                <button id="retake-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                    Retake Assessment
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const questions = [
+            { a: "There are times when I let others take responsibility for solving the problem.", b: "Rather than negotiate the things on which we disagree, I try to stress the things upon which we both agree." },
+            { a: "I try to find a compromise solution.", b: "I attempt to deal with all of his and my concerns." },
+            { a: "I am usually firm in pursuing my goals.", b: "I might try to soothe the other’s feelings and preserve our relationship." },
+            { a: "I try to find a compromise solution.", b: "I sometimes sacrifice my own wishes for the wishes of the other person." },
+            { a: "I consistently seek the other’s help in working out a solution.", b: "I try to do what is necessary to avoid useless tensions." },
+            { a: "I try to avoid creating unpleasantness for myself.", b: "I try to win my position." },
+            { a: "I try to postpone the issue until I have had some time to think it over.", b: "I give up some points in exchange for others." },
+            { a: "I am usually firm in pursuing my goals.", b: "I attempt to get all concerns and issues immediately out in the open." },
+            { a: "I feel that differences are not always worth worrying about.", b: "I make some effort to get my way." },
+            { a: "I am firm in pursuing my goals.", b: "I try to find a compromise solution." },
+            { a: "I attempt to get all concerns and issues immediately out in the open.", b: "I might try to soothe the other’s feelings and preserve our relationship." },
+            { a: "I sometimes avoid taking positions which would create controversy.", b: "I will let them have some of their positions if they let me have some of mine." },
+            { a: "I propose a middle ground.", b: "I press to get my points made." },
+            { a: "I tell them my ideas and ask for theirs.", b: "I try to show them the logic and benefits of my position." },
+            { a: "I might try to soothe the other’s feelings and preserve our relationship.", b: "I try to do what is necessary to avoid tensions." },
+            { a: "I try not to hurt the other’s feelings.", b: "I try to convince the other person of the merits of my position." },
+            { a: "I am usually firm in pursuing my goals.", b: "I try to do what is necessary to avoid useless tensions." },
+            { a: "If it makes other people happy, I might let them maintain their views.", b: "I will let them have some of their positions if they let me have some of mine." },
+            { a: "I attempt to get all concerns and issues immediately out in the open.", b: "I try to postpone the issue until I have had some time to think it over." },
+            { a: "I attempt to immediately work through our differences.", b: "I try to find a fair combination of gains and losses for everyone." },
+            { a: "In approaching negotiations, I try to be considerate of the other person’s wishes.", b: "I lean toward a direct discussion of the problem." },
+            { a: "I try to find a position that is intermediate between theirs and mine.", b: "I assert my wishes." },
+            { a: "I am very often concerned with satisfying all our wishes.", b: "There are times when I let others take responsibility for solving the problem." },
+            { a: "If the other’s position seems very important to them, I would try to meet their wishes.", b: "I try to get them to settle for a compromise." },
+            { a: "I try to show them the logic and benefits of my position.", b: "In approaching negotiations, I try to be considerate of the other person’s wishes." },
+            { a: "I propose a middle ground.", b: "I am nearly always concerned with satisfying all our wishes." },
+            { a: "I sometimes avoid taking positions that would create controversy.", b: "If it makes other people happy, I might let them maintain their views." },
+            { a: "I am usually firm in pursuing my goals.", b: "I usually seek the other’s help in working out a solution." },
+            { a: "I propose a middle ground.", b: "I feel that differences are not always worth worrying about." },
+            { a: "I try not to hurt the other’s feelings.", b: "I always share the problem with the other person so that we can work it out." }
+        ];
+
+        const scoringKey = {
+            '1_A': 'Avoiding', '1_B': 'Accommodating', '2_A': 'Compromising', '2_B': 'Collaborating', '3_A': 'Competing', '3_B': 'Accommodating', '4_A': 'Compromising', '4_B': 'Accommodating', '5_A': 'Collaborating', '5_B': 'Avoiding', '6_A': 'Avoiding', '6_B': 'Competing', '7_A': 'Avoiding', '7_B': 'Compromising', '8_A': 'Competing', '8_B': 'Collaborating', '9_A': 'Avoiding', '9_B': 'Competing', '10_A': 'Competing', '10_B': 'Compromising', '11_A': 'Collaborating', '11_B': 'Accommodating', '12_A': 'Avoiding', '12_B': 'Compromising', '13_A': 'Compromising', '13_B': 'Competing', '14_A': 'Collaborating', '14_B': 'Competing', '15_A': 'Accommodating', '15_B': 'Avoiding', '16_A': 'Accommodating', '16_B': 'Competing', '17_A': 'Competing', '17_B': 'Avoiding', '18_A': 'Accommodating', '18_B': 'Compromising', '19_A': 'Collaborating', '19_B': 'Avoiding', '20_A': 'Collaborating', '20_B': 'Compromising', '21_A': 'Accommodating', '21_B': 'Collaborating', '22_A': 'Compromising', '22_B': 'Competing', '23_A': 'Collaborating', '23_B': 'Avoiding', '24_A': 'Accommodating', '24_B': 'Compromising', '25_A': 'Competing', '25_B': 'Accommodating', '26_A': 'Compromising', '26_B': 'Collaborating', '27_A': 'Avoiding', '27_B': 'Accommodating', '28_A': 'Competing', '28_B': 'Collaborating', '29_A': 'Compromising', '29_B': 'Avoiding', '30_A': 'Accommodating', '30_B': 'Collaborating'
+        };
+
+        const modeDescriptions = {
+            Competing: {
+                title: "Competing (Assertive, Uncooperative)",
+                desc: "Pursuing your own concerns at the other person’s expense. This is a power-oriented mode, in which you use whatever power seems appropriate to win your own position."
+            },
+            Accommodating: {
+                title: "Accommodating (Unassertive, Cooperative)",
+                desc: "Neglecting your own concerns to satisfy the concerns of the other person; there is an element of self-sacrifice in this mode."
+            },
+            Avoiding: {
+                title: "Avoiding (Unassertive, Uncooperative)",
+                desc: "Not immediately pursuing your own concerns or those of the other person. You do not address the conflict; you sidestep, postpone, or withdraw."
+            },
+            Collaborating: {
+                title: "Collaborating (Assertive, Cooperative)",
+                desc: "Attempting to work with others to find an integrative solution that fully satisfies everyone's concerns. It means digging into an issue to identify the underlying needs of both individuals."
+            },
+            Compromising: {
+                title: "Compromising (Intermediate Assertiveness & Cooperativeness)",
+                desc: "Finding a mutually acceptable solution that partially satisfies both parties. It addresses an issue more directly than avoiding but doesn’t explore it in as much depth as collaborating."
+            }
+        };
+
+        const questionsContainer = document.getElementById('questions-container');
+        const assessmentForm = document.getElementById('assessment-form');
+        const assessmentSection = document.getElementById('assessment-section');
+        const resultsSection = document.getElementById('results-section');
+        const resultsContainer = document.getElementById('results-container');
+        const retakeBtn = document.getElementById('retake-btn');
+        const errorMessage = document.getElementById('error-message');
+
+        // Function to render questions
+        function renderQuestions() {
+            questionsContainer.innerHTML = '';
+            questions.forEach((q, index) => {
+                const questionNumber = index + 1;
+                const questionBlock = `
+                    <div class="p-5 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="font-semibold mb-4 text-gray-700">Question ${questionNumber}</p>
+                        <div class="space-y-3">
+                            <label class="flex items-center p-3 border rounded-md cursor-pointer hover:bg-blue-100 transition duration-200 has-[:checked]:bg-blue-100 has-[:checked]:border-blue-400">
+                                <input type="radio" name="q${questionNumber}" value="A" class="form-radio h-5 w-5 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-4 text-gray-800"><strong class="mr-2">A.</strong>${q.a}</span>
+                            </label>
+                            <label class="flex items-center p-3 border rounded-md cursor-pointer hover:bg-blue-100 transition duration-200 has-[:checked]:bg-blue-100 has-[:checked]:border-blue-400">
+                                <input type="radio" name="q${questionNumber}" value="B" class="form-radio h-5 w-5 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-4 text-gray-800"><strong class="mr-2">B.</strong>${q.b}</span>
+                            </label>
+                        </div>
+                    </div>
+                `;
+                questionsContainer.insertAdjacentHTML('beforeend', questionBlock);
+            });
+        }
+
+        // Function to calculate and display scores
+        function showResults(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(assessmentForm);
+            const answers = Object.fromEntries(formData.entries());
+
+            if (Object.keys(answers).length < 30) {
+                errorMessage.textContent = 'Please answer all 30 questions before submitting.';
+                return;
+            }
+            errorMessage.textContent = '';
+            
+            const scores = { Competing: 0, Collaborating: 0, Compromising: 0, Avoiding: 0, Accommodating: 0 };
+
+            for (const [question, answer] of Object.entries(answers)) {
+                const questionNum = question.replace('q', '');
+                const key = `${questionNum}_${answer}`;
+                const mode = scoringKey[key];
+                if (mode) {
+                    scores[mode]++;
+                }
+            }
+
+            // Prepare results for display
+            const sortedScores = Object.entries(scores).sort(([, a], [, b]) => b - a);
+            const highScore = sortedScores[0][1];
+
+            resultsContainer.innerHTML = '';
+            sortedScores.forEach(([mode, score]) => {
+                const isTopScore = score === highScore && highScore > 0;
+                const percentage = (score / 12) * 100; // Max score for any mode is 12
+                
+                const resultBlock = `
+                    <div class="border rounded-lg p-5 ${isTopScore ? 'bg-green-50 border-green-400 shadow-md' : 'bg-white border-gray-200'}">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <h3 class="text-xl font-bold ${isTopScore ? 'text-green-800' : 'text-gray-900'}">${modeDescriptions[mode].title}</h3>
+                            <p class="text-2xl font-bold mt-2 sm:mt-0 ${isTopScore ? 'text-green-600' : 'text-blue-600'}">${score} / 12</p>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-4 mt-3 mb-2 overflow-hidden">
+                            <div class="bg-blue-500 h-4 rounded-full ${isTopScore ? 'bg-green-500' : 'bg-blue-500'}" style="width: ${percentage}%"></div>
+                        </div>
+                        <p class="text-gray-600 mt-3">${modeDescriptions[mode].desc}</p>
+                        ${isTopScore ? '<p class="mt-3 font-semibold text-green-700">This is one of your dominant styles.</p>' : ''}
+                    </div>
+                `;
+                resultsContainer.insertAdjacentHTML('beforeend', resultBlock);
+            });
+            
+            assessmentSection.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        // Function to reset the assessment
+        function resetAssessment() {
+            assessmentForm.reset();
+            resultsSection.classList.add('hidden');
+            assessmentSection.classList.remove('hidden');
+            errorMessage.textContent = '';
+            window.scrollTo(0, 0);
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', renderQuestions);
+        assessmentForm.addEventListener('submit', showResults);
+        retakeBtn.addEventListener('click', resetAssessment);
+
+    </script>
+</body>
+</html>
